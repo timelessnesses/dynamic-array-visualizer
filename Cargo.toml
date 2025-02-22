@@ -1,0 +1,15 @@
+[package]
+name = "growth-size-array"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+sdl2 = { version = "0.37.0", features = ["ttf", "static-link", "use-vcpkg"] }
+
+[package.metadata.vcpkg]
+dependencies = ["sdl2", "sdl2-ttf"]
+git = "https://github.com/microsoft/vcpkg"
+rev = "80d54ff62d528339c626a6fbc3489a7f25956ade"
+
+[package.metadata.vcpkg.target]
+x86_64-pc-windows-msvc = { triplet = "x64-windows-static-md" }
