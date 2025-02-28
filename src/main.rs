@@ -13,10 +13,6 @@ macro_rules! debuggery {
             {
                 dbg!($($e),+)
             }
-            #[cfg(not(debug_assertions))]
-            {
-                ($($e),+)
-            }
         }
     };
 }
@@ -91,7 +87,7 @@ fn main() {
     let texture_creator = canvas.texture_creator();
 
     let ttf = sdl2::ttf::init().unwrap();
-    let font = ttf.load_font_from_rwops(RWops::from_bytes(include_bytes!("../NotoSans-Thin.ttf")).unwrap(), 30).unwrap();
+    let font = ttf.load_font_from_rwops(RWops::from_bytes(include_bytes!("../Sen-Regular.ttf")).unwrap(), 30).unwrap();
 
     let mut operations_per_append = 0.0;
     let mut memory_efficiency = 0.0;
@@ -198,28 +194,60 @@ fn main() {
             all_appends.push(operations_per_append);
         }
 
+        let mut starting_y = (canvas.logical_size().1 / {
+            #[cfg(debug_assertions)]
+            {
+                10
+            }
+            #[cfg(not(debug_assertions))]
+            {
+                7
+            }
+        }) as i32 + ((font.size_of("a").unwrap().1) * {
+            #[cfg(debug_assertions)]
+            {
+                10
+            }
+            #[cfg(not(debug_assertions))]
+            {
+                7
+            }
+        } / 2) as i32;
+
         let mem_eff = font.render(&format!("Memory efficiency: {:.2}%", memory_efficiency * 100.0)).blended(Color::BLACK).unwrap();
         let op_append = font.render(&format!("Operations per append: {:.2}", operations_per_append)).blended(Color::BLACK).unwrap();
-        let min_fps = font.render(&format!("Minimum FPS: {:.2}", lf)).blended(Color::BLACK).unwrap();
-        let max_fps = font.render(&format!("Maximum FPS: {:.2}", mf)).blended(Color::BLACK).unwrap();
-        let cur_fps = font.render(&format!("Current FPS: {:.2}", fps)).blended(Color::BLACK).unwrap();
         let capacity = font.render(&format!("Capacity: {}", array.capacity)).blended(Color::BLACK).unwrap();
         let size = font.render(&format!("Size: {}", array.size)).blended(Color::BLACK).unwrap();
         let gf = font.render(&format!("Growth factor: {}", array.growth)).blended(Color::BLACK).unwrap();
         let all_eff = font.render(&format!("All efficiencies: {:.2}%", all_efficiencies.iter().sum::<f64>() / all_efficiencies.len() as f64 * 100.0)).blended(Color::BLACK).unwrap();
         let all_append = font.render(&format!("All appends: {:.2}", all_appends.iter().sum::<f64>() / all_appends.len() as f64)).blended(Color::BLACK).unwrap();
-        let is_appending_old_data_completed = font.render(&format!("Is appending old data completed: {}", array.old_data_size == array.old_data_appended)).blended(Color::BLACK).unwrap();
-        canvas.copy(&mem_eff.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1100, 200, mem_eff.width(), mem_eff.height()))).unwrap();
-        canvas.copy(&op_append.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1100, 250, op_append.width(), op_append.height()))).unwrap();
-        canvas.copy(&min_fps.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1100, 300, min_fps.width(), min_fps.height()))).unwrap();
-        canvas.copy(&max_fps.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1100, 350, max_fps.width(), max_fps.height()))).unwrap();
-        canvas.copy(&cur_fps.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1100, 400, cur_fps.width(), cur_fps.height()))).unwrap();
-        canvas.copy(&capacity.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1100, 450, capacity.width(), capacity.height()))).unwrap();
-        canvas.copy(&size.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1100, 500, size.width(), size.height()))).unwrap();
-        canvas.copy(&gf.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1100, 550, gf.width(), gf.height()))).unwrap();
-        canvas.copy(&all_eff.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1100, 600, all_eff.width(), all_eff.height()))).unwrap();
-        canvas.copy(&all_append.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1100, 650, all_append.width(), all_append.height()))).unwrap();
-        canvas.copy(&is_appending_old_data_completed.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1100, 700, is_appending_old_data_completed.width(), is_appending_old_data_completed.height()))).unwrap();
+        canvas.copy(&mem_eff.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1100, starting_y, mem_eff.width(), mem_eff.height()))).unwrap();
+        starting_y += mem_eff.height() as i32;
+        canvas.copy(&op_append.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1100, starting_y, op_append.width(), op_append.height()))).unwrap();
+        starting_y += op_append.height() as i32;
+        canvas.copy(&capacity.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1100, starting_y, capacity.width(), capacity.height()))).unwrap();
+        starting_y += capacity.height() as i32;
+        canvas.copy(&size.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1100, starting_y, size.width(), size.height()))).unwrap();
+        starting_y += size.height() as i32;
+        canvas.copy(&gf.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1100, starting_y, gf.width(), gf.height()))).unwrap();
+        starting_y += gf.height() as i32;
+        canvas.copy(&all_eff.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1100, starting_y, all_eff.width(), all_eff.height()))).unwrap();
+        starting_y += all_eff.height() as i32;
+        canvas.copy(&all_append.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1100, starting_y, all_append.width(), all_append.height()))).unwrap();
+        starting_y += all_append.height() as i32;
+        #[cfg(debug_assertions)]
+
+        {
+            let min_fps = font.render(&format!("Minimum FPS: {:.2}", lf)).blended(Color::BLACK).unwrap();
+            let max_fps = font.render(&format!("Maximum FPS: {:.2}", mf)).blended(Color::BLACK).unwrap();
+            let cur_fps = font.render(&format!("Current FPS: {:.2}", fps)).blended(Color::BLACK).unwrap();
+            canvas.copy(&min_fps.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1100, starting_y, min_fps.width(), min_fps.height()))).unwrap();
+            starting_y += min_fps.height() as i32;
+            canvas.copy(&max_fps.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1100, starting_y, max_fps.width(), max_fps.height()))).unwrap();
+            starting_y += max_fps.height() as i32;
+            canvas.copy(&cur_fps.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1100, starting_y, cur_fps.width(), cur_fps.height()))).unwrap();
+            starting_y += cur_fps.height() as i32;
+        };
 
         canvas.set_draw_color(Color::WHITE);
 
