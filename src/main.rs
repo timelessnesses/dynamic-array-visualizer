@@ -24,7 +24,9 @@ struct Array {
     size: usize,
     capacity: usize,
     hard_limit: Option<usize>,
-    old_data_appended: usize, // Track how much old data has been appended back
+    old_data_appended: usize, // Track how much old data has been appended back,
+    resizes: usize,
+    copy_operations: usize
 }
 
 impl Array {
@@ -36,6 +38,8 @@ impl Array {
             capacity: 1,
             hard_limit,
             old_data_appended: 0,
+            copy_operations: 0,
+            resizes: 0,
         }
     }
 
@@ -51,6 +55,7 @@ impl Array {
     }
     
     fn extend(&mut self) {
+        self.resizes += 1;
         self.old_data_size = self.size;
         self.capacity = (self.capacity as f64 * self.growth).ceil() as usize;
         
@@ -64,6 +69,7 @@ impl Array {
 
     fn append_old_data(&mut self) -> Result<usize, ()> {
         if self.old_data_appended < self.old_data_size {
+            self.copy_operations += 1;
             self.old_data_appended += 1;
             Ok(self.old_data_appended)
         } else {
@@ -78,7 +84,7 @@ fn main() {
     let grid_width = (1000 / cell_size) as usize;
     let grid_height = (1000 / cell_size) as usize;
 
-    let mut array = Array::new(std::env::args().nth(1).unwrap_or("2.0".to_string()).parse::<f64>().unwrap(), Some(grid_height * grid_width));
+    let mut array = Array::new(std::env::args().nth(1).unwrap_or("1.618".to_string()).parse::<f64>().unwrap(), Some(grid_height * grid_width));
     let ctx = sdl2::init().unwrap();
     let video = ctx.video().unwrap();
     let mut event_pump = ctx.event_pump().unwrap();
@@ -214,38 +220,49 @@ fn main() {
             }
         } / 2) as i32;
 
-        let mem_eff = font.render(&format!("Memory efficiency: {:.2}%", memory_efficiency * 100.0)).blended(Color::BLACK).unwrap();
-        let op_append = font.render(&format!("Operations per append: {:.2}", operations_per_append)).blended(Color::BLACK).unwrap();
+        let mem_eff = font.render(&format!("Memory efficiency: {:.3}%", memory_efficiency * 100.0)).blended(Color::BLACK).unwrap();
+        let op_append = font.render(&format!("Operations per append: {:.3}", operations_per_append)).blended(Color::BLACK).unwrap();
         let capacity = font.render(&format!("Capacity: {}", array.capacity)).blended(Color::BLACK).unwrap();
         let size = font.render(&format!("Size: {}", array.size)).blended(Color::BLACK).unwrap();
         let gf = font.render(&format!("Growth factor: {}", array.growth)).blended(Color::BLACK).unwrap();
-        let all_eff = font.render(&format!("All efficiencies: {:.2}%", all_efficiencies.iter().sum::<f64>() / all_efficiencies.len() as f64 * 100.0)).blended(Color::BLACK).unwrap();
-        let all_append = font.render(&format!("All appends: {:.2}", all_appends.iter().sum::<f64>() / all_appends.len() as f64)).blended(Color::BLACK).unwrap();
-        canvas.copy(&mem_eff.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1100, starting_y, mem_eff.width(), mem_eff.height()))).unwrap();
+        let all_eff = font.render(&format!("All efficiencies: {:.3}%", all_efficiencies.iter().sum::<f64>() / all_efficiencies.len() as f64 * 100.0)).blended(Color::BLACK).unwrap();
+        let all_append = font.render(&format!("All appends: {:.3}", all_appends.iter().sum::<f64>() / all_appends.len() as f64)).blended(Color::BLACK).unwrap();
+        let copy_operations = font.render(&format!("Copy operations: {}", array.copy_operations)).blended(Color::BLACK).unwrap();
+        let resizes = font.render(&format!("Resizes: {}", array.resizes)).blended(Color::BLACK).unwrap();
+        let copy_ops_per_resize = font.render(&format!("Copy operations per resize: {:.3}", array.copy_operations as f64 / array.resizes as f64)).blended(Color::BLACK).unwrap();
+
+        canvas.copy(&mem_eff.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1000, starting_y, mem_eff.width(), mem_eff.height()))).unwrap();
         starting_y += mem_eff.height() as i32;
-        canvas.copy(&op_append.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1100, starting_y, op_append.width(), op_append.height()))).unwrap();
+        canvas.copy(&op_append.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1000, starting_y, op_append.width(), op_append.height()))).unwrap();
         starting_y += op_append.height() as i32;
-        canvas.copy(&capacity.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1100, starting_y, capacity.width(), capacity.height()))).unwrap();
+        canvas.copy(&capacity.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1000, starting_y, capacity.width(), capacity.height()))).unwrap();
         starting_y += capacity.height() as i32;
-        canvas.copy(&size.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1100, starting_y, size.width(), size.height()))).unwrap();
+        canvas.copy(&size.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1000, starting_y, size.width(), size.height()))).unwrap();
         starting_y += size.height() as i32;
-        canvas.copy(&gf.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1100, starting_y, gf.width(), gf.height()))).unwrap();
+        canvas.copy(&gf.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1000, starting_y, gf.width(), gf.height()))).unwrap();
         starting_y += gf.height() as i32;
-        canvas.copy(&all_eff.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1100, starting_y, all_eff.width(), all_eff.height()))).unwrap();
+        canvas.copy(&all_eff.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1000, starting_y, all_eff.width(), all_eff.height()))).unwrap();
         starting_y += all_eff.height() as i32;
-        canvas.copy(&all_append.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1100, starting_y, all_append.width(), all_append.height()))).unwrap();
+        canvas.copy(&all_append.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1000, starting_y, all_append.width(), all_append.height()))).unwrap();
         starting_y += all_append.height() as i32;
+        canvas.copy(&copy_operations.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1000, starting_y, copy_operations.width(), copy_operations.height()))).unwrap();
+        starting_y += copy_operations.height() as i32;
+        canvas.copy(&resizes.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1000, starting_y, resizes.width(), resizes.height()))).unwrap();
+        starting_y += resizes.height() as i32;
+        canvas.copy(&copy_ops_per_resize.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1000, starting_y, copy_ops_per_resize.width(), copy_ops_per_resize.height()))).unwrap();
+        starting_y += copy_ops_per_resize.height() as i32;
+
         #[cfg(debug_assertions)]
 
         {
             let min_fps = font.render(&format!("Minimum FPS: {:.2}", lf)).blended(Color::BLACK).unwrap();
             let max_fps = font.render(&format!("Maximum FPS: {:.2}", mf)).blended(Color::BLACK).unwrap();
             let cur_fps = font.render(&format!("Current FPS: {:.2}", fps)).blended(Color::BLACK).unwrap();
-            canvas.copy(&min_fps.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1100, starting_y, min_fps.width(), min_fps.height()))).unwrap();
+            canvas.copy(&min_fps.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1000, starting_y, min_fps.width(), min_fps.height()))).unwrap();
             starting_y += min_fps.height() as i32;
-            canvas.copy(&max_fps.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1100, starting_y, max_fps.width(), max_fps.height()))).unwrap();
+            canvas.copy(&max_fps.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1000, starting_y, max_fps.width(), max_fps.height()))).unwrap();
             starting_y += max_fps.height() as i32;
-            canvas.copy(&cur_fps.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1100, starting_y, cur_fps.width(), cur_fps.height()))).unwrap();
+            canvas.copy(&cur_fps.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1000, starting_y, cur_fps.width(), cur_fps.height()))).unwrap();
             starting_y += cur_fps.height() as i32;
         };
 
