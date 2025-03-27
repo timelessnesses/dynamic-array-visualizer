@@ -81,8 +81,8 @@ impl Array {
 fn main() {
 
     let cell_size = 10usize;
-    let grid_width = (1000 / cell_size) as usize;
-    let grid_height = (1000 / cell_size) as usize;
+    let grid_width = 1000 / cell_size;
+    let grid_height = 1000 / cell_size;
 
     let mut array = Array::new(std::env::args().nth(1).unwrap_or("1.618".to_string()).parse::<f64>().unwrap(), Some(grid_height * grid_width));
     let ctx = sdl2::init().unwrap();
@@ -96,7 +96,7 @@ fn main() {
     let font = ttf.load_font_from_rwops(RWops::from_bytes(include_bytes!("../Sen-Regular.ttf")).unwrap(), 30).unwrap();
 
     let mut operations_per_append = 0.0;
-    let mut memory_efficiency = 0.0;
+    let mut memory_efficiency;
     let mut operations = 0;
 
     let ffmpeg = Arc::new(Mutex::new(ffmpeg::VideoRecorder::new(&(std::env::args().nth(1).unwrap_or("2.0".to_string()) + ".mp4"), 1600, 1000, 60)));
@@ -168,11 +168,9 @@ fn main() {
                     println!("\rExpanding array's capacity by allocating more memory");
                     array.extend();
                     println!("New capacity: {}", array.capacity);
-                    if let Err(_) = array.grow() {
-                        if !limited_reached {
-                            limited_reached = true;
-                            last_limit_reached = std::time::Instant::now();
-                        }
+                    if array.grow().is_err() && !limited_reached {
+                        limited_reached = true;
+                        last_limit_reached = std::time::Instant::now();
                     }
                     operations += 2;
                 }
@@ -183,15 +181,9 @@ fn main() {
             }
         }
 
-        match array.append_old_data() {
-            Ok(_) => {
-                if !limited_reached {
-                    debuggery!("\rSuccessfully appended old data: {}", array.old_data_appended);
-                    operations += 1;
-                }
-            },
-            Err(_) => {
-            }
+        if array.append_old_data().is_ok() && !limited_reached {
+            debuggery!("\rSuccessfully appended old data: {}", array.old_data_appended);
+            operations += 1;
         }
 
         if !limited_reached {
@@ -263,7 +255,6 @@ fn main() {
             canvas.copy(&max_fps.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1000, starting_y, max_fps.width(), max_fps.height()))).unwrap();
             starting_y += max_fps.height() as i32;
             canvas.copy(&cur_fps.as_texture(&texture_creator).unwrap(), None, Some(Rect::new(1000, starting_y, cur_fps.width(), cur_fps.height()))).unwrap();
-            starting_y += cur_fps.height() as i32;
         };
 
         canvas.set_draw_color(Color::WHITE);

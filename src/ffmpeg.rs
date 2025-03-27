@@ -15,6 +15,7 @@ pub struct VideoRecorder {
 /// Going for biggest data type I can do
 #[derive(Debug)]
 pub struct FFMpegStatus {
+    #[allow(dead_code)]
     pub done: bool,
     pub frame: u128,
     pub fps: f64,
@@ -38,19 +39,19 @@ impl Default for FFMpegStatus {
     }
 }
 
-/// https://gist.github.com/edwardstock/90b41d4d53af4c32853073865a319222 thanks edward!  
-/// ## Usable named groups
-/// - `nframe`
-/// - `nfps`
-/// - `nq`
-/// - `nsize`
-/// - `ssize`
-/// - `sduration`
-/// - `nbitrate`
-/// - `sbitrate`
-/// - `ndup`
-/// - `ndrop`
-/// - `nspeed`
+// https://gist.github.com/edwardstock/90b41d4d53af4c32853073865a319222 thanks edward!  
+// ## Usable named groups
+// - `nframe`
+// - `nfps`
+// - `nq`
+// - `nsize`
+// - `ssize`
+// - `sduration`
+// - `nbitrate`
+// - `sbitrate`
+// - `ndup`
+// - `ndrop`
+// - `nspeed`
 // const REGEX_IS_FUCKING_HIDEOUS: &str = "frame=\\s*(?<nframe>[0-9]+)\\s+fps=\\s*(?<nfps>[0-9\\.]+)\\s+q=(?<nq>[0-9\\.-]+)\\s+(L?)\\s*size=\\s*(?<nsize>[0-9]+)(?<ssize>kB|mB|b)?\\s*time=\\s*(?<sduration>[0-9\\:\\.]+)\\s*bitrate=\\s*(?<nbitrate>[0-9\\.]+)(?<sbitrate>bits\\/s|mbits\\/s|kbits\\/s)?.*(dup=(?<ndup>\\d+)\\s*)?(drop=(?<ndrop>\\d+)\\s*)?speed=\\s*(?<nspeed>[0-9\\.]+)x";
 
 fn parsery(time: &str) -> std::time::Duration {
